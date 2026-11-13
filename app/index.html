@@ -1,0 +1,1757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadence</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230F766E'/%3E%3Cpath d='M16 7v9l6 4' fill='none' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+/* ===== Cadence design tokens (contract: plan/docs/INTERFACES.md §8) ===== */
+/* Light (default) */
+:root {
+  --bg: #F6FBFA;
+  --surface: #FFFFFF;
+  --fg: #0F3D38;
+  --fg-muted: #48615D;
+  --primary: #0F766E;
+  --on-primary: #FFFFFF;
+  --accent: #0D9488;
+  --accent-text: #0F766E;
+  --border: #B9DAD5;
+  --focus: #0F766E;
+  --danger: #B91C1C;
+  --accent-break: #0284C7;
+  --accent-break-text: #0369A1;
+  --font-display: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: "Iowan Old Style", Palatino, Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Dark */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0C1514;
+    --surface: #132221;
+    --fg: #D9ECE9;
+    --fg-muted: #9FBBB6;
+    --primary: #14B8A6;
+    --on-primary: #06211E;
+    --accent: #2DD4BF;
+    --accent-text: #2DD4BF;
+    --border: #2A4442;
+    --focus: #2DD4BF;
+    --danger: #F87171;
+    --accent-break: #38BDF8;
+    --accent-break-text: #38BDF8;
+  }
+}
+
+/* Body base only — full component styling arrives with impl-UI-T2 */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ===== Cadence component styling (impl-UI-T2) ===== */
+
+* {
+  box-sizing: border-box;
+}
+
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 48px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  text-align: center;
+}
+
+h1 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.tagline {
+  font-size: 14px;
+  color: var(--fg-muted);
+  margin: 4px 0 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+:is(button, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+button,
+input[type="checkbox"] {
+  transition: background-color 200ms ease-out, color 200ms ease-out,
+              opacity 200ms ease-out, transform 150ms ease-out, filter 200ms ease-out;
+}
+
+/* ---------- storage notice ---------- */
+#storage-notice {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  max-width: 100%;
+}
+
+/* ---------- mode segments ---------- */
+#mode-indicator {
+  display: flex;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+  background: var(--surface);
+}
+
+.mode-segment {
+  min-height: 44px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 16px;
+}
+
+.mode-segment[aria-pressed="true"] {
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+}
+
+#app.mode-break .mode-segment[aria-pressed="true"] {
+  color: var(--accent-break-text);
+}
+
+/* ---------- time display ---------- */
+#time-display {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(64px, 18vw, 140px);
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0;
+}
+
+#app.mode-break #time-display {
+  color: var(--accent-break);
+}
+
+/* ---------- controls ---------- */
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-primary {
+  min-height: 56px;
+  min-width: 160px;
+  padding: 12px 48px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.06);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  min-height: 44px;
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 16px;
+}
+
+.btn-secondary:hover {
+  background: var(--surface);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* ---------- progress / stats ---------- */
+#progress {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 16px;
+  margin: 0;
+}
+
+#progress p {
+  margin: 0;
+}
+
+#progress span {
+  font-weight: 600;
+}
+
+/* ---------- history ---------- */
+#history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+#history-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.history-bar {
+  fill: var(--accent);
+  fill-opacity: 0.8;
+}
+
+.history-bar.today {
+  fill-opacity: 1;
+}
+
+.history-bar.zero {
+  fill: var(--border);
+  fill-opacity: 1;
+}
+
+.today-marker {
+  fill: var(--accent);
+}
+
+/* ---------- footer ---------- */
+#app-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+#shortcut-hints {
+  font-size: 14px;
+  color: var(--fg-muted);
+  margin: 0;
+}
+
+#data-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#import-status {
+  font-size: 14px;
+  color: var(--fg-muted);
+  margin: 0;
+  min-height: 1em;
+}
+
+/* ---------- settings dialog ---------- */
+#settings-dialog {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  width: min(92vw, 400px);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+#settings-dialog::backdrop {
+  background: rgba(8, 20, 19, 0.5);
+}
+
+#settings-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  margin: 0 0 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.field label {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field input[type="number"] {
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  width: 100%;
+}
+
+.field input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.field-error {
+  font-size: 12px;
+  color: var(--danger);
+  display: block;
+  min-height: 1em;
+}
+
+#btn-settings-close {
+  min-height: 44px;
+  padding: 8px 32px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+#btn-settings-close:hover {
+  filter: brightness(1.06);
+}
+
+#btn-settings-close:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 400px) {
+  #app {
+    padding: 32px 12px 48px;
+  }
+}
+</style>
+</head>
+<body>
+<main id="app">
+  <header>
+    <h1>Cadence</h1>
+    <p class="tagline">Find your focus rhythm</p>
+  </header>
+
+  <div id="storage-notice" role="status" hidden>
+    Storage is unavailable in this browser session — Cadence still works, but your data
+    will not be saved after you close the tab.
+  </div>
+
+  <div id="mode-indicator" role="group" aria-label="Timer mode">
+    <button type="button" id="mode-work" class="mode-segment" aria-pressed="true">Focus</button>
+    <button type="button" id="mode-short" class="mode-segment" aria-pressed="false">Short</button>
+    <button type="button" id="mode-long" class="mode-segment" aria-pressed="false">Long</button>
+  </div>
+
+  <div id="time-display" role="timer" aria-label="Time remaining">25:00</div>
+
+  <div id="controls">
+    <button type="button" id="btn-start" class="btn-primary">Start</button>
+    <button type="button" id="btn-reset" class="btn-secondary">Reset</button>
+  </div>
+
+  <section id="progress" aria-label="Progress">
+    <p id="today-line">Today: <span id="today-count">0</span> sessions</p>
+    <p id="streak-line">
+      Streak: <span id="streak-current">0</span> days ·
+      Best: <span id="streak-best">0</span> days
+    </p>
+  </section>
+
+  <section id="history" aria-label="Last 14 days">
+    <svg id="history-svg" role="img" aria-label="Session history, last 14 days"
+         viewBox="0 0 328 80" width="328" height="80" xmlns="http://www.w3.org/2000/svg"></svg>
+  </section>
+
+  <div id="live-region" class="visually-hidden" aria-live="polite"></div>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <h2 id="settings-title">Settings</h2>
+    <form id="settings-form" method="dialog">
+      <div class="field">
+        <label for="input-work">Focus length (minutes)</label>
+        <input id="input-work" name="work" type="number" min="1" max="180" step="1" inputmode="numeric">
+        <span id="error-work" class="field-error" role="alert"></span>
+      </div>
+      <div class="field">
+        <label for="input-short">Short break length (minutes)</label>
+        <input id="input-short" name="short" type="number" min="1" max="180" step="1" inputmode="numeric">
+        <span id="error-short" class="field-error" role="alert"></span>
+      </div>
+      <div class="field">
+        <label for="input-long">Long break length (minutes)</label>
+        <input id="input-long" name="long" type="number" min="1" max="180" step="1" inputmode="numeric">
+        <span id="error-long" class="field-error" role="alert"></span>
+      </div>
+      <div class="field">
+        <label for="input-interval">Focus sessions before a long break</label>
+        <input id="input-interval" name="interval" type="number" min="2" max="12" step="1" inputmode="numeric">
+        <span id="error-interval" class="field-error" role="alert"></span>
+      </div>
+      <div class="field">
+        <label><input id="input-auto-advance" name="autoAdvance" type="checkbox"> Auto-start the next interval</label>
+      </div>
+      <div class="field">
+        <label><input id="input-sound" name="sound" type="checkbox"> Sound on completion</label>
+      </div>
+      <button id="btn-settings-close" type="submit">Done</button>
+    </form>
+  </dialog>
+
+  <footer id="app-footer">
+    <p id="shortcut-hints">Shortcuts: Space start/pause · R reset · S settings</p>
+    <div id="data-controls">
+      <button type="button" id="btn-export" class="btn-secondary">Export data</button>
+      <button type="button" id="btn-import" class="btn-secondary">Import data</button>
+      <input id="import-file" type="file" accept="application/json" class="visually-hidden"
+             aria-label="Import data file">
+      <button type="button" id="btn-settings" class="btn-secondary">Settings</button>
+    </div>
+    <p id="import-status" role="status"></p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ===== pub/sub — real implementation (trivial infrastructure) ===== */
+  function createBus() {
+    var handlers = Object.create(null);
+    return {
+      on: function (event, fn) {
+        (handlers[event] || (handlers[event] = [])).push(fn);
+        return this;
+      },
+      off: function (event, fn) {
+        var list = handlers[event];
+        if (list) {
+          var i = list.indexOf(fn);
+          if (i >= 0) list.splice(i, 1);
+        }
+        return this;
+      },
+      emit: function (event, payload) {
+        var list = handlers[event];
+        if (list) {
+          list.slice().forEach(function (fn) { fn(payload); });
+        }
+        return this;
+      }
+    };
+  }
+
+  /* ===== engine (timestamp-based FSM; IS a bus — on/off/emit work now) ===== */
+
+  /** @returns {number} ms for a given mode under a config */
+  function durationForMode(mode, config) {
+    return config[mode] * 60 * 1000;
+  }
+
+  const engineState = {
+    status: 'idle',
+    mode: 'work',
+    endAt: null,
+    pausedRemaining: null,
+    durationMs: 25 * 60 * 1000,
+    cycleCount: 0,
+    readySince: null,
+    config: { work: 25, short: 5, long: 15, interval: 4, autoAdvance: false },
+    pending: null
+  };
+
+  /**
+   * Merge a partial config. interval/autoAdvance apply immediately; duration fields
+   * apply immediately while idle/ready, else are queued in `pending` for the next
+   * mode change. See INTERFACES.md §1.2.
+   * @param {object} cfg
+   * @returns {void}
+   */
+  function engineConfigure(cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    if (Object.prototype.hasOwnProperty.call(cfg, 'interval')) {
+      engineState.config.interval = cfg.interval;
+    }
+    if (Object.prototype.hasOwnProperty.call(cfg, 'autoAdvance')) {
+      engineState.config.autoAdvance = cfg.autoAdvance;
+    }
+    const durationPatch = {};
+    let hasDurationChange = false;
+    for (const field of ['work', 'short', 'long']) {
+      if (Object.prototype.hasOwnProperty.call(cfg, field)) {
+        durationPatch[field] = cfg[field];
+        hasDurationChange = true;
+      }
+    }
+    if (!hasDurationChange) return;
+    if (engineState.status === 'idle' || engineState.status === 'ready') {
+      Object.assign(engineState.config, durationPatch);
+      engineState.durationMs = durationForMode(engineState.mode, engineState.config);
+    } else {
+      engineState.pending = Object.assign({}, engineState.pending, durationPatch);
+    }
+  }
+
+  /** @returns {object} deep-ish copy of the engine state */
+  function engineGetState() {
+    return {
+      status: engineState.status,
+      mode: engineState.mode,
+      endAt: engineState.endAt,
+      pausedRemaining: engineState.pausedRemaining,
+      durationMs: engineState.durationMs,
+      cycleCount: engineState.cycleCount,
+      readySince: engineState.readySince,
+      config: Object.assign({}, engineState.config),
+      pending: engineState.pending ? Object.assign({}, engineState.pending) : null
+    };
+  }
+
+  /** @param {number} now @returns {void} */
+  function engineStart(now) {
+    if (engineState.status === 'running') return; // idempotent
+    if (engineState.status === 'idle' || engineState.status === 'ready') {
+      engineState.endAt = now + engineState.durationMs;
+      engineState.pausedRemaining = null;
+      engineState.readySince = null;
+      engineState.status = 'running';
+    } else if (engineState.status === 'paused') {
+      engineState.endAt = now + engineState.pausedRemaining;
+      engineState.pausedRemaining = null;
+      engineState.status = 'running';
+    }
+  }
+
+  /** @param {number} now @returns {void} */
+  function enginePause(now) {
+    if (engineState.status !== 'running') return;
+    engineState.pausedRemaining = engineRemaining(now);
+    engineState.endAt = null;
+    engineState.status = 'paused';
+  }
+
+  /** @param {number} now @returns {void} */
+  function engineToggle(now) {
+    if (engineState.status === 'running') enginePause(now);
+    else engineStart(now);
+  }
+
+  /** @param {number} now @returns {void} */
+  function engineReset(now) {
+    if (engineState.pending) {
+      Object.assign(engineState.config, engineState.pending);
+      engineState.pending = null;
+    }
+    engineState.status = 'idle';
+    engineState.endAt = null;
+    engineState.pausedRemaining = null;
+    engineState.readySince = null;
+    engineState.durationMs = durationForMode(engineState.mode, engineState.config);
+  }
+
+  /** @param {'work'|'short'|'long'} mode @param {number} now @returns {void} */
+  function engineSetMode(mode, now) {
+    if (engineState.pending) {
+      Object.assign(engineState.config, engineState.pending);
+      engineState.pending = null;
+    }
+    engineState.mode = mode;
+    engineState.status = 'idle';
+    engineState.endAt = null;
+    engineState.pausedRemaining = null;
+    engineState.readySince = null;
+    engineState.durationMs = durationForMode(mode, engineState.config);
+    engine.emit('modechange', { mode: mode, status: 'idle', at: now });
+  }
+
+  /** @param {number} now @returns {number} ms remaining, clamped to [0, durationMs] */
+  function engineRemaining(now) {
+    if (engineState.status === 'running') {
+      let rem = engineState.endAt - now;
+      if (rem < 0) rem = 0;
+      if (rem > engineState.durationMs) rem = engineState.durationMs;
+      return rem;
+    }
+    if (engineState.status === 'paused') return engineState.pausedRemaining;
+    return engineState.durationMs; // idle | ready
+  }
+
+  /** @param {number} now @returns {void} */
+  function engineTick(now) {
+    if (engineState.status === 'running' && engineRemaining(now) === 0) {
+      const finished = engineState.mode;
+      if (finished === 'work') engineState.cycleCount += 1;
+      const nextMode = finished === 'work'
+        ? (engineState.cycleCount % engineState.config.interval === 0 ? 'long' : 'short')
+        : 'work';
+      if (engineState.pending) {
+        Object.assign(engineState.config, engineState.pending);
+        engineState.pending = null;
+      }
+      engineState.mode = nextMode;
+      engineState.durationMs = durationForMode(nextMode, engineState.config);
+      engineState.status = 'ready';
+      engineState.readySince = now;
+      engineState.endAt = null;
+      engineState.pausedRemaining = null;
+
+      engine.emit('complete', {
+        mode: finished,
+        nextMode: nextMode,
+        cycleCount: engineState.cycleCount,
+        at: now
+      });
+      engine.emit('modechange', { mode: nextMode, status: 'ready', at: now });
+    }
+
+    if (
+      engineState.status === 'ready' &&
+      engineState.config.autoAdvance &&
+      now - engineState.readySince >= engine.GRACE_MS
+    ) {
+      engineStart(now);
+    }
+
+    engine.emit('tick', {
+      now: now,
+      remaining: engineRemaining(now),
+      status: engineState.status,
+      mode: engineState.mode
+    });
+  }
+
+  const engine = Object.assign(createBus(), {
+    GRACE_MS: 3000,
+    configure: engineConfigure,
+    getState: engineGetState,
+    start: engineStart,
+    pause: enginePause,
+    toggle: engineToggle,
+    reset: engineReset,
+    setMode: engineSetMode,
+    remaining: engineRemaining,
+    tick: engineTick
+  });
+
+  /* ===== store — namespaced localStorage + in-memory fallback ===== */
+
+  /** Backed-by-Map Storage-like shim, installed only when real localStorage is unavailable. */
+  function createMemoryStorage() {
+    const backing = new Map();
+    return {
+      getItem(key) { return backing.has(key) ? backing.get(key) : null; },
+      setItem(key, value) { backing.set(key, String(value)); },
+      removeItem(key) { backing.delete(key); },
+      clear() { backing.clear(); },
+      key(i) { const keys = Array.from(backing.keys()); return i >= 0 && i < keys.length ? keys[i] : null; },
+      get length() { return backing.size; }
+    };
+  }
+
+  // If the real localStorage is simply unavailable (e.g. opaque file:// origin), install a
+  // working in-memory substitute so the app behaves normally for the session. A localStorage
+  // that EXISTS but THROWS on access (private mode / quota / security) is left alone — that
+  // case is handled per-call below via the persistent-fallback flag.
+  (function ensureWorkingLocalStorage() {
+    let existing;
+    let accessThrew = false;
+    try {
+      existing = window.localStorage;
+    } catch (err) {
+      accessThrew = true;
+    }
+    // Only install the shim when the property plainly resolves to undefined/null (no
+    // real localStorage object at all — e.g. an opaque origin that never defines it).
+    // If ACCESSING the property itself threw, do NOT paper over that here: leave
+    // window.localStorage alone and let the per-call storePersistent fallback below
+    // (storeGet/storeSet/storeRemove's own try/catch) detect the throw and report
+    // non-persistence, so #storage-notice still shows (FEAT-002).
+    if (!accessThrew && (typeof existing === 'undefined' || existing === null)) {
+      try {
+        Object.defineProperty(window, 'localStorage', {
+          value: createMemoryStorage(),
+          configurable: true,
+          writable: true
+        });
+      } catch (defineErr) {
+        // Nothing more we can do here; store's own mirror fallback still keeps the app working.
+      }
+    }
+  })();
+
+  const storeMirror = new Map();
+  let storePersistent = true;
+
+  /**
+   * Read + JSON.parse a key, recovering per-key on corrupt JSON.
+   * @param {string} key @returns {any|null}
+   */
+  function storeGet(key) {
+    if (!storePersistent) {
+      return storeMirror.has(key) ? storeMirror.get(key) : null;
+    }
+    let raw;
+    try {
+      raw = window.localStorage.getItem(key);
+    } catch (err) {
+      storePersistent = false;
+      return storeMirror.has(key) ? storeMirror.get(key) : null;
+    }
+    if (raw === null || raw === undefined) {
+      storeMirror.delete(key);
+      return null;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (parseErr) {
+      try { window.localStorage.removeItem(key); } catch (rmErr) { storePersistent = false; }
+      storeMirror.delete(key);
+      return null;
+    }
+    storeMirror.set(key, parsed);
+    return parsed;
+  }
+
+  /**
+   * JSON.stringify + write, always updating the in-memory mirror.
+   * @param {string} key @param {any} value @returns {boolean} true if persisted to real storage
+   */
+  function storeSet(key, value) {
+    storeMirror.set(key, value);
+    if (!storePersistent) return false;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (err) {
+      storePersistent = false;
+      return false;
+    }
+  }
+
+  /** @param {string} key @returns {void} */
+  function storeRemove(key) {
+    storeMirror.delete(key);
+    if (!storePersistent) return;
+    try {
+      window.localStorage.removeItem(key);
+    } catch (err) {
+      storePersistent = false;
+    }
+  }
+
+  /** @returns {boolean} */
+  function storeIsPersistent() {
+    return storePersistent;
+  }
+
+  /** @param {number} now @returns {object} ExportDoc */
+  function storeExportData(now) {
+    const storedSettings = storeGet(store.KEYS.settings);
+    const storedDays = storeGet(store.KEYS.days);
+    const storedBest = storeGet(store.KEYS.best);
+    return {
+      v: 1,
+      exportedAt: new Date(now).toISOString(),
+      settings: storedSettings || Object.assign({}, settings.DEFAULTS),
+      days: storedDays && storedDays.map && typeof storedDays.map === 'object'
+        ? storedDays
+        : { v: 1, map: {} },
+      best: storedBest && typeof storedBest.best === 'number'
+        ? storedBest
+        : { v: 1, best: 0 }
+    };
+  }
+
+  const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+  /**
+   * Validate + atomically apply an export document.
+   * @param {any} doc @returns {{ok:true}|{ok:false,error:string}}
+   */
+  function storeImportData(doc) {
+    if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) {
+      return { ok: false, error: 'Import document must be an object.' };
+    }
+    if (doc.v !== 1) {
+      return { ok: false, error: 'Unsupported schema version.' };
+    }
+    if (!doc.settings || typeof doc.settings !== 'object') {
+      return { ok: false, error: 'Missing settings.' };
+    }
+    if (!doc.days || typeof doc.days !== 'object' || doc.days.v !== 1 ||
+        !doc.days.map || typeof doc.days.map !== 'object' || Array.isArray(doc.days.map)) {
+      return { ok: false, error: 'Missing or invalid day history.' };
+    }
+    if (!doc.best || typeof doc.best !== 'object' || doc.best.v !== 1 ||
+        typeof doc.best.best !== 'number') {
+      return { ok: false, error: 'Missing or invalid best streak.' };
+    }
+
+    const settingsFields = ['work', 'short', 'long', 'interval', 'autoAdvance', 'sound'];
+    const settingsPatch = {};
+    for (const field of settingsFields) {
+      if (!Object.prototype.hasOwnProperty.call(doc.settings, field)) {
+        return { ok: false, error: 'Settings missing field "' + field + '".' };
+      }
+      settingsPatch[field] = doc.settings[field];
+    }
+    const settingsValidation = settings.validate(settingsPatch);
+    if (!settingsValidation.ok) {
+      return { ok: false, error: 'Invalid settings: ' + Object.keys(settingsValidation.errors).join(', ') };
+    }
+    // Coerce the same way settings.update() does (Number() for numeric fields, booleans
+    // pass through) so the persisted doc is type-pure, never raw strings like work:"25".
+    const coercedSettings = {};
+    for (const field of settingsFields) {
+      coercedSettings[field] = (field === 'autoAdvance' || field === 'sound')
+        ? settingsPatch[field]
+        : Number(settingsPatch[field]);
+    }
+
+    const daysMap = doc.days.map;
+    for (const dateKey of Object.keys(daysMap)) {
+      if (!DATE_KEY_RE.test(dateKey)) {
+        return { ok: false, error: 'Invalid date key "' + dateKey + '".' };
+      }
+      const count = daysMap[dateKey];
+      if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) {
+        return { ok: false, error: 'Invalid session count for "' + dateKey + '".' };
+      }
+    }
+
+    if (!Number.isInteger(doc.best.best) || doc.best.best < 0) {
+      return { ok: false, error: 'Invalid best streak value.' };
+    }
+
+    // All valid — apply atomically.
+    storeSet(store.KEYS.settings, Object.assign({ v: 1 }, coercedSettings));
+    storeSet(store.KEYS.days, { v: 1, map: Object.assign({}, daysMap) });
+    storeSet(store.KEYS.best, { v: 1, best: doc.best.best });
+    return { ok: true };
+  }
+
+  const store = {
+    KEYS: Object.freeze({
+      settings: 'cadence.settings',
+      days: 'cadence.days',
+      best: 'cadence.best'
+    }),
+    get: storeGet,
+    set: storeSet,
+    remove: storeRemove,
+    isPersistent: storeIsPersistent,
+    exportData: storeExportData,
+    importData: storeImportData
+  };
+
+  /* ===== settings — validated model ===== */
+
+  const settingsLimits = Object.freeze({
+    work: Object.freeze([1, 180]),
+    short: Object.freeze([1, 180]),
+    long: Object.freeze([1, 180]),
+    interval: Object.freeze([2, 12])
+  });
+  const settingsDefaults = Object.freeze({
+    v: 1, work: 25, short: 5, long: 15, interval: 4, autoAdvance: false, sound: true
+  });
+
+  let activeSettings = Object.assign({}, settingsDefaults);
+  let settingsLoaded = false;
+
+  /**
+   * Validate a single field's value. @returns {string|null} error message, or null if valid.
+   */
+  function validateSettingsField(field, value) {
+    if (field === 'work' || field === 'short' || field === 'long' || field === 'interval') {
+      const range = settingsLimits[field];
+      if (typeof value === 'boolean' || value === null || value === undefined || value === '') {
+        return 'Enter a whole number ' + range[0] + '-' + range[1];
+      }
+      const n = Number(value);
+      if (Number.isNaN(n) || !Number.isInteger(n) || n < range[0] || n > range[1]) {
+        return 'Enter a whole number ' + range[0] + '-' + range[1];
+      }
+      return null;
+    }
+    if (field === 'autoAdvance' || field === 'sound') {
+      return typeof value === 'boolean' ? null : 'Must be true or false';
+    }
+    return 'Unknown setting "' + field + '".';
+  }
+
+  /** @param {object} patch @returns {{ok:boolean, errors:object}} */
+  function settingsValidate(patch) {
+    const errors = {};
+    if (patch && typeof patch === 'object') {
+      for (const field of Object.keys(patch)) {
+        const err = validateSettingsField(field, patch[field]);
+        if (err) errors[field] = err;
+      }
+    }
+    return { ok: Object.keys(errors).length === 0, errors: errors };
+  }
+
+  /** @returns {object} SettingsDoc */
+  function settingsLoad() {
+    const stored = storeGet(store.KEYS.settings) || {};
+    const merged = Object.assign({}, settingsDefaults);
+    for (const field of ['work', 'short', 'long', 'interval', 'autoAdvance', 'sound']) {
+      if (Object.prototype.hasOwnProperty.call(stored, field) &&
+          !validateSettingsField(field, stored[field])) {
+        merged[field] = (field === 'autoAdvance' || field === 'sound')
+          ? stored[field]
+          : Number(stored[field]);
+      }
+    }
+    activeSettings = merged;
+    settingsLoaded = true;
+    return Object.assign({}, activeSettings);
+  }
+
+  /** @returns {object} SettingsDoc */
+  function settingsGet() {
+    if (!settingsLoaded) return settingsLoad();
+    return Object.assign({}, activeSettings);
+  }
+
+  /** @param {object} patch @returns {{ok:boolean, settings:object, errors:object}} */
+  function settingsUpdate(patch) {
+    if (!settingsLoaded) settingsLoad();
+    const errors = {};
+    const appliedFields = {};
+    if (patch && typeof patch === 'object') {
+      for (const field of Object.keys(patch)) {
+        const err = validateSettingsField(field, patch[field]);
+        if (err) {
+          errors[field] = err;
+        } else {
+          const value = (field === 'autoAdvance' || field === 'sound')
+            ? patch[field]
+            : Number(patch[field]);
+          activeSettings[field] = value;
+          appliedFields[field] = value;
+        }
+      }
+    }
+    storeSet(store.KEYS.settings, Object.assign({}, activeSettings));
+    if (Object.keys(appliedFields).length > 0) {
+      engine.configure(appliedFields);
+    }
+    return {
+      ok: Object.keys(errors).length === 0,
+      settings: Object.assign({}, activeSettings),
+      errors: errors
+    };
+  }
+
+  const settings = {
+    DEFAULTS: settingsDefaults,
+    LIMITS: settingsLimits,
+    load: settingsLoad,
+    get: settingsGet,
+    validate: settingsValidate,
+    update: settingsUpdate
+  };
+
+  /* ===== stats — day->count analytics ===== */
+
+  /** @param {number} n @returns {string} */
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  /** @param {number} now @returns {string} 'YYYY-MM-DD' local */
+  function statsLocalDateStr(now) {
+    const d = new Date(now);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  /** @param {string} dateStr @param {number} deltaDays @returns {string} */
+  function stepDateStr(dateStr, deltaDays) {
+    const [y, m, day] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, day);
+    dt.setDate(dt.getDate() + deltaDays);
+    return dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate());
+  }
+
+  /** @param {object} map @param {string} todayStr @returns {number} */
+  function statsComputeStreak(map, todayStr) {
+    const m = map || {};
+    const todayCount = m[todayStr] || 0;
+    let cursor;
+    if (todayCount >= 1) {
+      cursor = todayStr;
+    } else {
+      cursor = stepDateStr(todayStr, -1);
+      if (!((m[cursor] || 0) >= 1)) return 0;
+    }
+    let streak = 0;
+    while ((m[cursor] || 0) >= 1) {
+      streak += 1;
+      cursor = stepDateStr(cursor, -1);
+    }
+    return streak;
+  }
+
+  /** @param {object} map @param {number} n @param {string} todayStr @returns {Array} */
+  function statsComputeLastNDays(map, n, todayStr) {
+    const m = map || {};
+    const result = [];
+    for (let i = n - 1; i >= 0; i -= 1) {
+      const dateStr = stepDateStr(todayStr, -i);
+      result.push({ date: dateStr, count: m[dateStr] || 0 });
+    }
+    return result;
+  }
+
+  /** @returns {object} day->count map, {} when absent/corrupt/missing-shape */
+  function statsGetDays() {
+    const stored = storeGet(store.KEYS.days);
+    if (stored && stored.map && typeof stored.map === 'object') {
+      return Object.assign({}, stored.map);
+    }
+    return {};
+  }
+
+  /** @returns {number} stored best streak, 0 if absent/corrupt */
+  function statsBest() {
+    const stored = storeGet(store.KEYS.best);
+    if (stored && typeof stored.best === 'number' && Number.isFinite(stored.best)) {
+      return stored.best;
+    }
+    return 0;
+  }
+
+  /** @param {number} now @returns {number} new count for that date */
+  function statsRecordSession(now) {
+    const dateStr = statsLocalDateStr(now);
+    const map = statsGetDays();
+    const newCount = (map[dateStr] || 0) + 1;
+    map[dateStr] = newCount;
+    storeSet(store.KEYS.days, { v: 1, map: map });
+
+    const streakNow = statsComputeStreak(map, dateStr);
+    const currentBest = statsBest();
+    if (streakNow > currentBest) {
+      storeSet(store.KEYS.best, { v: 1, best: streakNow });
+    }
+    return newCount;
+  }
+
+  /** @param {number} now @returns {number} */
+  function statsTodayCount(now) {
+    const map = statsGetDays();
+    return map[statsLocalDateStr(now)] || 0;
+  }
+
+  /** @param {number} now @returns {number} */
+  function statsStreak(now) {
+    return statsComputeStreak(statsGetDays(), statsLocalDateStr(now));
+  }
+
+  /** @param {number} n @param {number} now @returns {Array} */
+  function statsLastNDays(n, now) {
+    return statsComputeLastNDays(statsGetDays(), n, statsLocalDateStr(now));
+  }
+
+  const stats = {
+    localDateStr: statsLocalDateStr,
+    computeStreak: statsComputeStreak,
+    computeLastNDays: statsComputeLastNDays,
+    getDays: statsGetDays,
+    recordSession: statsRecordSession,
+    todayCount: statsTodayCount,
+    streak: statsStreak,
+    best: statsBest,
+    lastNDays: statsLastNDays
+  };
+
+  /* ===== audio — WebAudio chime (lazy AudioContext, no files, no network) ===== */
+
+  let audioCtx = null; // created lazily, on first unlock()/chime() call
+
+  /** @returns {Function|undefined} the AudioContext constructor, if WebAudio is available */
+  function getAudioContextCtor() {
+    return window.AudioContext || window.webkitAudioContext;
+  }
+
+  /** @returns {object|null} the shared AudioContext, creating it on first call */
+  function ensureAudioContext() {
+    if (audioCtx) return audioCtx;
+    const Ctor = getAudioContextCtor();
+    if (!Ctor) return null;
+    audioCtx = new Ctor();
+    return audioCtx;
+  }
+
+  /**
+   * Create/resume the AudioContext from a user gesture. Safe no-op when WebAudio is
+   * unavailable or anything throws. @returns {void}
+   */
+  function audioUnlock() {
+    try {
+      const ctx = ensureAudioContext();
+      if (ctx && ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+        ctx.resume();
+      }
+    } catch (err) {
+      // audio must never break the timer
+    }
+  }
+
+  /**
+   * Play one sine tone with a short attack/decay gain envelope.
+   * @param {object} ctx @param {number} freq Hz @param {number} startTime ctx seconds
+   * @param {number} duration seconds @returns {void}
+   */
+  function playTone(ctx, freq, startTime, duration) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.onended = function () {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (err) {
+        // cleanup is best-effort; never break the timer
+      }
+    };
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+  }
+
+  /**
+   * Synthesize a short (~0.6s) two-note chime (sine oscillators + gain envelopes, no
+   * buffers/files). Creates the AudioContext on first call if unlock() never ran. All
+   * errors swallowed. The settings.sound check is the CALLER's job. @returns {void}
+   */
+  function audioChime() {
+    try {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+        ctx.resume();
+      }
+      const now = ctx.currentTime;
+      playTone(ctx, 880, now, 0.28);
+      playTone(ctx, 1318.51, now + 0.28, 0.32);
+    } catch (err) {
+      // audio must never break the timer
+    }
+  }
+
+  const audio = {
+    unlock: audioUnlock,
+    chime: audioChime
+  };
+
+  /* ===== ui — DOM binding layer ===== */
+
+  let dom = null;            // populated by uiInit(): all DOM refs, cached once
+  let settingsOpener = null; // element to restore focus to when the dialog closes
+  let tickHandle = null;     // setInterval handle for the ~250ms drive loop
+
+  /** @param {number} n @returns {string} zero-padded to >=2 digits */
+  function pad2Time(n) { return n < 10 ? '0' + n : String(n); }
+
+  /** 'MM:SS', zero-padded, rounds UP partial seconds. @param {number} ms @returns {string} */
+  function uiFormatTime(ms) {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return pad2Time(m) + ':' + pad2Time(s);
+  }
+
+  /** @param {Element} el @param {boolean} pressed @returns {void} */
+  function setPressed(el, pressed) {
+    el.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+  }
+
+  /** @param {string} message @returns {void} */
+  function uiAnnounce(message) {
+    if (!dom) return;
+    // Clear-then-set so repeated identical messages still register as a mutation for AT.
+    dom.liveRegion.textContent = '';
+    dom.liveRegion.textContent = message;
+  }
+
+  /** @param {'work'|'short'|'long'} mode @returns {string} */
+  function modeLabel(mode) {
+    if (mode === 'work') return 'Focus';
+    if (mode === 'short') return 'Short break';
+    return 'Long break';
+  }
+
+  /** @param {number} now @returns {void} */
+  function uiUpdateTitle(now) {
+    const state = engine.getState();
+    if (state.status === 'running') {
+      document.title = uiFormatTime(engine.remaining(now)) + ' · Cadence';
+    } else if (state.status === 'paused') {
+      document.title = 'Paused · Cadence';
+    } else if (state.status === 'ready') {
+      document.title = state.mode === 'work' ? 'Focus — Cadence' : 'Break — Cadence';
+    } else {
+      document.title = 'Cadence';
+    }
+  }
+
+  /** Render the 14-day SVG per INTERFACES.md §7. @param {Array<{date,count}>} days @returns {void} */
+  function uiRenderHistory(days) {
+    if (!dom) return;
+    const svg = dom.historySvg;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const BAR_WIDTH = 16;
+    const GAP = 8;
+    const MAX_BAR_HEIGHT = 64;
+    const MIN_BAR_HEIGHT = 3;
+    const BASELINE = 68;
+
+    const list = Array.isArray(days) ? days : [];
+    const maxCount = list.reduce(function (m, d) { return Math.max(m, d.count); }, 0);
+
+    list.forEach(function (day, i) {
+      const x = i * (BAR_WIDTH + GAP);
+      const isToday = i === list.length - 1;
+      let height = MIN_BAR_HEIGHT;
+      if (maxCount > 0 && day.count > 0) {
+        height = Math.max(MIN_BAR_HEIGHT, (day.count / maxCount) * MAX_BAR_HEIGHT);
+      }
+      const y = BASELINE - height;
+
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(BAR_WIDTH));
+      rect.setAttribute('height', String(height));
+      rect.setAttribute('rx', '4');
+      rect.setAttribute('data-date', day.date);
+      rect.setAttribute('data-count', String(day.count));
+      rect.setAttribute('aria-label', day.date + ': ' + day.count + ' sessions');
+      let cls = 'history-bar';
+      if (day.count === 0) cls += ' zero';
+      if (isToday) cls += ' today';
+      rect.setAttribute('class', cls);
+      svg.appendChild(rect);
+
+      if (isToday) {
+        const marker = document.createElementNS(SVG_NS, 'rect');
+        marker.setAttribute('x', String(x));
+        marker.setAttribute('y', String(BASELINE + 6));
+        marker.setAttribute('width', String(BAR_WIDTH));
+        marker.setAttribute('height', '3');
+        marker.setAttribute('rx', '1.5');
+        marker.setAttribute('class', 'today-marker');
+        svg.appendChild(marker);
+      }
+    });
+  }
+
+  /** @param {object} errors @returns {void} */
+  function setFieldErrors(errors) {
+    if (!dom) return;
+    const map = {
+      work: dom.errorWork,
+      short: dom.errorShort,
+      long: dom.errorLong,
+      interval: dom.errorInterval
+    };
+    Object.keys(map).forEach(function (field) {
+      map[field].textContent = (errors && errors[field]) ? errors[field] : '';
+    });
+  }
+
+  /** Sync all visible state from module state. @param {number} now @returns {void} */
+  function uiRender(now) {
+    if (!dom) return;
+    const state = engine.getState();
+
+    dom.timeDisplay.textContent = uiFormatTime(engine.remaining(now));
+
+    setPressed(dom.modeWork, state.mode === 'work');
+    setPressed(dom.modeShort, state.mode === 'short');
+    setPressed(dom.modeLong, state.mode === 'long');
+
+    dom.btnStart.textContent = state.status === 'running' ? 'Pause' : 'Start';
+
+    dom.app.classList.toggle('mode-break', state.mode !== 'work');
+
+    const today = stats.todayCount(now);
+    const streak = stats.streak(now);
+    const best = stats.best();
+    dom.todayCount.textContent = String(today);
+    dom.streakCurrent.textContent = String(streak);
+    dom.streakBest.textContent = String(best);
+
+    uiRenderHistory(stats.lastNDays(14, now));
+    uiUpdateTitle(now);
+  }
+
+  /** @returns {Element[]} tabbable elements inside the settings dialog, in DOM order */
+  function getDialogTabbables() {
+    if (!dom) return [];
+    const selector = 'button, input, select, textarea, [tabindex]';
+    return Array.from(dom.settingsDialog.querySelectorAll(selector)).filter(function (el) {
+      if (el.hasAttribute('disabled')) return false;
+      const tabindexAttr = el.getAttribute('tabindex');
+      if (tabindexAttr !== null && Number(tabindexAttr) < 0) return false;
+      return true;
+    });
+  }
+
+  /** @param {KeyboardEvent} event @returns {void} */
+  function trapDialogTab(event) {
+    const tabbables = getDialogTabbables();
+    if (tabbables.length === 0) return;
+    const first = tabbables[0];
+    const last = tabbables[tabbables.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey) {
+      if (active === first || !dom.settingsDialog.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (active === last || !dom.settingsDialog.contains(active)) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  /** @returns {void} */
+  function uiOpenSettings() {
+    if (!dom) return;
+    settingsOpener = document.activeElement;
+    const current = settings.get();
+    dom.inputWork.value = current.work;
+    dom.inputShort.value = current.short;
+    dom.inputLong.value = current.long;
+    dom.inputInterval.value = current.interval;
+    dom.inputAutoAdvance.checked = current.autoAdvance;
+    dom.inputSound.checked = current.sound;
+    setFieldErrors({});
+
+    dom.settingsDialog.setAttribute('open', '');
+    if (typeof dom.settingsDialog.showModal === 'function') {
+      try { dom.settingsDialog.showModal(); } catch (err) { /* already open, or unsupported */ }
+    }
+    dom.inputWork.focus();
+  }
+
+  /** Close the dialog + return focus, WITHOUT validating/applying (Escape/S-toggle path). */
+  function dismissSettingsDialog() {
+    if (!dom) return;
+    const opener = settingsOpener;
+    settingsOpener = null;
+    if (typeof dom.settingsDialog.close === 'function') {
+      try { dom.settingsDialog.close(); } catch (err) { /* already closed */ }
+    }
+    dom.settingsDialog.removeAttribute('open');
+    if (opener && typeof opener.focus === 'function') opener.focus();
+  }
+
+  /** Validate + apply inputs, close, return focus (Done/submit path). @returns {void} */
+  function uiCloseSettings() {
+    if (!dom) return;
+    const patch = {
+      work: dom.inputWork.value,
+      short: dom.inputShort.value,
+      long: dom.inputLong.value,
+      interval: dom.inputInterval.value,
+      autoAdvance: dom.inputAutoAdvance.checked,
+      sound: dom.inputSound.checked
+    };
+    const result = settings.update(patch);
+    setFieldErrors(result.errors);
+    dismissSettingsDialog();
+    uiRender(Date.now());
+    uiAnnounce('Settings saved.');
+  }
+
+  /** @param {KeyboardEvent} event @returns {void} */
+  function uiHandleKey(event) {
+    if (!dom) return;
+    const dialog = dom.settingsDialog;
+    const isOpen = dialog.hasAttribute('open');
+    const key = event.key;
+
+    if (isOpen) {
+      if (key === 'Escape') {
+        event.preventDefault();
+        dismissSettingsDialog();
+        return;
+      }
+      if (key === 'Tab') {
+        trapDialogTab(event);
+        return;
+      }
+      if (key.toLowerCase() === 's') {
+        dismissSettingsDialog();
+      }
+      // While the dialog is open, only Escape/Tab/S are handled here — everything else
+      // (e.g. Space on a focused Done button) must NOT fall through to the global
+      // Space/R shortcuts, or it would toggle/reset the timer behind the modal.
+      return;
+    }
+
+    const target = event.target;
+    const tag = target && target.tagName ? target.tagName.toUpperCase() : '';
+    const isTextInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+      (target && target.isContentEditable);
+    if (isTextInput) return;
+
+    if (key === ' ') {
+      event.preventDefault();
+      engine.toggle(Date.now());
+      return;
+    }
+    const lower = key.toLowerCase();
+    if (lower === 'r') {
+      engine.reset(Date.now());
+      return;
+    }
+    if (lower === 's') {
+      if (isOpen) dismissSettingsDialog();
+      else uiOpenSettings();
+    }
+  }
+
+  /** @param {number} now @returns {void} */
+  function uiExportFile(now) {
+    try {
+      const doc = store.exportData(now);
+      const json = JSON.stringify(doc, null, 2);
+      const blob = new window.Blob([json], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cadence-export-' + stats.localDateStr(now) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      if (typeof window.URL.revokeObjectURL === 'function') window.URL.revokeObjectURL(url);
+    } catch (err) {
+      // Export must never crash the app; the file simply won't download in this environment.
+    }
+  }
+
+  /** @param {File} file @returns {Promise<{ok:boolean, error?:string}>} */
+  function uiImportFile(file) {
+    return new Promise(function (resolve) {
+      if (!file || file.size > 1000000) {
+        const msg = 'That file is too large to import.';
+        if (dom) dom.importStatus.textContent = msg;
+        uiAnnounce(msg);
+        resolve({ ok: false, error: msg });
+        return;
+      }
+      const reader = new window.FileReader();
+      reader.onload = function () {
+        let parsed;
+        try {
+          parsed = JSON.parse(String(reader.result));
+        } catch (err) {
+          const msg = 'That file is not valid JSON.';
+          if (dom) dom.importStatus.textContent = msg;
+          uiAnnounce(msg);
+          resolve({ ok: false, error: msg });
+          return;
+        }
+        const result = store.importData(parsed);
+        if (result.ok) {
+          settings.load();
+          engine.configure(settings.get());
+          uiRender(Date.now());
+          if (dom) dom.importStatus.textContent = 'Import successful.';
+          uiAnnounce('Data imported successfully.');
+          resolve({ ok: true });
+        } else {
+          if (dom) dom.importStatus.textContent = result.error;
+          uiAnnounce(result.error);
+          resolve({ ok: false, error: result.error });
+        }
+      };
+      reader.onerror = function () {
+        const msg = 'Could not read that file.';
+        if (dom) dom.importStatus.textContent = msg;
+        uiAnnounce(msg);
+        resolve({ ok: false, error: msg });
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  let uiInitialized = false; // idempotency guard — see uiInit()
+
+  /** Boot: bind DOM, wire events, start the drive loop. @returns {void} */
+  function uiInit() {
+    if (uiInitialized) return; // repeated calls must not stack listeners or re-wrap engine methods
+    uiInitialized = true;
+    dom = {
+      app: document.getElementById('app'),
+      storageNotice: document.getElementById('storage-notice'),
+      modeWork: document.getElementById('mode-work'),
+      modeShort: document.getElementById('mode-short'),
+      modeLong: document.getElementById('mode-long'),
+      timeDisplay: document.getElementById('time-display'),
+      btnStart: document.getElementById('btn-start'),
+      btnReset: document.getElementById('btn-reset'),
+      todayCount: document.getElementById('today-count'),
+      streakCurrent: document.getElementById('streak-current'),
+      streakBest: document.getElementById('streak-best'),
+      historySvg: document.getElementById('history-svg'),
+      liveRegion: document.getElementById('live-region'),
+      settingsDialog: document.getElementById('settings-dialog'),
+      settingsForm: document.getElementById('settings-form'),
+      inputWork: document.getElementById('input-work'),
+      inputShort: document.getElementById('input-short'),
+      inputLong: document.getElementById('input-long'),
+      inputInterval: document.getElementById('input-interval'),
+      inputAutoAdvance: document.getElementById('input-auto-advance'),
+      inputSound: document.getElementById('input-sound'),
+      errorWork: document.getElementById('error-work'),
+      errorShort: document.getElementById('error-short'),
+      errorLong: document.getElementById('error-long'),
+      errorInterval: document.getElementById('error-interval'),
+      btnSettings: document.getElementById('btn-settings'),
+      btnExport: document.getElementById('btn-export'),
+      btnImport: document.getElementById('btn-import'),
+      importFileInput: document.getElementById('import-file'),
+      importStatus: document.getElementById('import-status')
+    };
+
+    settings.load();
+    engine.configure(settings.get());
+
+    if (!store.isPersistent()) {
+      dom.storageNotice.hidden = false;
+    }
+
+    dom.modeWork.addEventListener('click', function () { engine.setMode('work', Date.now()); });
+    dom.modeShort.addEventListener('click', function () { engine.setMode('short', Date.now()); });
+    dom.modeLong.addEventListener('click', function () { engine.setMode('long', Date.now()); });
+
+    dom.btnStart.addEventListener('click', function () {
+      if (settings.get().sound) {
+        audio.unlock(); // lazy AudioContext creation from a user gesture, per contract
+      }
+      engine.toggle(Date.now());
+    });
+    dom.btnReset.addEventListener('click', function () { engine.reset(Date.now()); });
+
+    dom.btnSettings.addEventListener('click', function () { uiOpenSettings(); });
+    dom.settingsForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      uiCloseSettings();
+    });
+
+    dom.btnExport.addEventListener('click', function () { uiExportFile(Date.now()); });
+    dom.btnImport.addEventListener('click', function () { dom.importFileInput.click(); });
+    dom.importFileInput.addEventListener('change', function (event) {
+      const file = event.target.files && event.target.files[0];
+      if (file) {
+        ui.importFile(file).then(function () {
+          dom.importFileInput.value = '';
+        });
+      }
+    });
+
+    document.addEventListener('keydown', uiHandleKey);
+
+    // Only 'tick'/'complete'/'modechange' are emitted by the engine (see INTERFACES.md §1.3);
+    // start/pause/toggle/reset emit nothing, yet direct calls (tests, programmatic use) must
+    // still render + announce. Wrap those four so every path funnels through one place.
+    const rawStart = engine.start;
+    const rawPause = engine.pause;
+    const rawReset = engine.reset;
+
+    engine.start = function (now) {
+      const before = engine.getState().status;
+      rawStart(now);
+      const after = engine.getState().status;
+      if (after !== before) {
+        uiRender(now);
+        if (after === 'running') uiAnnounce('Timer started.');
+      }
+    };
+    engine.pause = function (now) {
+      const before = engine.getState().status;
+      rawPause(now);
+      const after = engine.getState().status;
+      if (after !== before) {
+        uiRender(now);
+        if (after === 'paused') uiAnnounce('Timer paused.');
+      }
+    };
+    engine.toggle = function (now) {
+      if (engine.getState().status === 'running') engine.pause(now);
+      else engine.start(now);
+    };
+    engine.reset = function (now) {
+      rawReset(now);
+      uiRender(now);
+      uiAnnounce('Timer reset.');
+    };
+
+    engine.on('complete', function (payload) {
+      if (payload.mode === 'work') {
+        stats.recordSession(payload.at);
+      }
+      if (settings.get().sound) {
+        audio.chime();
+      }
+      uiRender(payload.at);
+      uiAnnounce('Session complete. ' + modeLabel(payload.nextMode) + ' is ready.');
+    });
+
+    engine.on('modechange', function (payload) {
+      uiRender(payload.at);
+      uiAnnounce(modeLabel(payload.mode) + ' selected.');
+    });
+
+    engine.on('tick', function (payload) {
+      // Per-tick drive (~250ms): avoid the full uiRender() — it re-parses localStorage
+      // (todayCount/streak/lastNDays each re-call statsGetDays) and tears down/rebuilds
+      // the history SVG every tick. Only the time display and document title change on
+      // a plain tick; every data-changing transition (start/pause/reset/complete/
+      // modechange) already triggers a full uiRender via its own wrapper/listener.
+      if (dom) dom.timeDisplay.textContent = uiFormatTime(payload.remaining);
+      uiUpdateTitle(payload.now);
+    });
+
+    if (tickHandle !== null) {
+      window.clearInterval(tickHandle);
+    }
+    tickHandle = window.setInterval(function () { engine.tick(Date.now()); }, 250);
+    document.addEventListener('visibilitychange', function () { engine.tick(Date.now()); });
+
+    uiRender(Date.now());
+  }
+
+  const ui = {
+    init: uiInit,
+    render: uiRender,
+    announce: uiAnnounce,
+    renderHistory: uiRenderHistory,
+    updateTitle: uiUpdateTitle,
+    formatTime: uiFormatTime,
+    openSettings: uiOpenSettings,
+    closeSettings: uiCloseSettings,
+    handleKey: uiHandleKey,
+    exportFile: uiExportFile,
+    importFile: uiImportFile
+  };
+
+  window.Cadence = {
+    version: '0.1.0',
+    createBus: createBus,
+    engine: engine,
+    store: store,
+    settings: settings,
+    stats: stats,
+    audio: audio,
+    ui: ui
+  };
+
+  /* ===== boot (stub-tolerant per INTERFACES.md §6) ===== */
+  function boot() {
+    try {
+      window.Cadence.ui.init();
+    } catch (err) {
+      if (!(err instanceof Error) || err.message !== 'not implemented') throw err;
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

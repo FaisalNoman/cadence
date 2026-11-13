@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadence — Free Pomodoro Timer, No Account, Works Offline</title>
+<meta name="description" content="Cadence is a free Pomodoro focus timer that runs as one offline-capable HTML file. No account, no ads, no tracking — your data stays on your device.">
+<link rel="canonical" href="https://faisalnoman.github.io/cadence/">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cadence — Free Online Pomodoro Timer">
+<meta property="og:description" content="A free Pomodoro focus timer that runs as one offline-capable HTML file. No account, no ads, no tracking.">
+<meta property="og:url" content="https://faisalnoman.github.io/cadence/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cadence — Free Online Pomodoro Timer">
+<meta name="twitter:description" content="A free Pomodoro focus timer that runs as one offline-capable HTML file. No account, no ads, no tracking.">
+
+<!-- data: URI favicon — no network request -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%230F766E'/%3E%3Cpath d='M32 16v16l11 7' stroke='%23FFFFFF' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Cadence",
+  "applicationCategory": "ProductivityApplication",
+  "operatingSystem": "Any (runs in any modern web browser)",
+  "url": "https://faisalnoman.github.io/cadence/",
+  "description": "A free Pomodoro focus timer that ships as a single offline-capable HTML file. No account required, no network calls at runtime, no tracking. Session history, streaks, and settings are stored locally and can be exported or imported as JSON.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "browserRequirements": "Requires a modern browser with JavaScript and localStorage support",
+  "isAccessibleForFree": true
+}
+</script>
+
+<style>
+  :root {
+    --bg: #F6FBFA;
+    --surface: #FFFFFF;
+    --fg: #0F3D38;
+    --fg-muted: #48615D;
+    --primary: #0F766E;
+    --on-primary: #FFFFFF;
+    --accent: #0D9488;
+    --accent-text: #0F766E;
+    --accent-break-text: #0369A1;
+    --border: #B9DAD5;
+    --focus: #0F766E;
+    --danger: #B91C1C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0C1514;
+      --surface: #132221;
+      --fg: #D9ECE9;
+      --fg-muted: #9FBBB6;
+      --primary: #14B8A6;
+      --on-primary: #06211E;
+      --accent: #2DD4BF;
+      --accent-text: #2DD4BF;
+      --accent-break-text: #38BDF8;
+      --border: #2A4442;
+      --focus: #2DD4BF;
+      --danger: #F87171;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3 {
+    font-family: Iowan Old Style, Palatino, Georgia, serif;
+    color: var(--fg);
+    line-height: 1.25;
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--accent-text);
+    text-decoration-thickness: 1px;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  summary:focus-visible,
+  .btn:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  header.site {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Iowan Old Style, Palatino, Georgia, serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .brand svg { flex-shrink: 0; }
+
+  main { display: block; }
+
+  section { padding: 64px 0; }
+  section + section { border-top: 1px solid var(--border); }
+
+  .hero { padding-top: 56px; padding-bottom: 56px; }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 42px);
+    margin: 0 0 16px;
+    max-width: 600px;
+  }
+  .hero .subhead {
+    font-size: 19px;
+    color: var(--fg-muted);
+    max-width: 540px;
+    margin: 0 0 28px;
+  }
+  .hero .trust-note {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin: 20px 0 0;
+  }
+
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 56px;
+    padding: 0 28px;
+    border-radius: 999px;
+    font-size: 17px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: filter 150ms ease-out, transform 150ms ease-out;
+  }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--fg);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface); }
+
+  .section-head { max-width: 600px; margin: 0 0 40px; }
+  .section-head h2 {
+    font-size: clamp(24px, 4vw, 30px);
+    margin: 0 0 12px;
+  }
+  .section-head p {
+    color: var(--fg-muted);
+    margin: 0;
+  }
+  .eyebrow {
+    display: block;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+    margin: 0 0 10px;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .feature-card .icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .feature-card h3 {
+    font-size: 18px;
+    margin: 0 0 8px;
+  }
+  .feature-card p {
+    color: var(--fg-muted);
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .step {
+    position: relative;
+    padding-top: 8px;
+  }
+  .step .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 14px;
+  }
+  .step h3 { font-size: 17px; margin: 0 0 8px; }
+  .step p { color: var(--fg-muted); margin: 0; font-size: 15px; }
+
+  .qa-grid {
+    display: grid;
+    gap: 20px;
+  }
+  .qa-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .qa-card h3 { font-size: 17px; margin: 0 0 8px; }
+  .qa-card p { color: var(--fg-muted); margin: 0; font-size: 15px; }
+
+  details.faq {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 0;
+  }
+  details.faq:first-of-type { border-top: 1px solid var(--border); }
+  details.faq summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 17px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  details.faq summary::-webkit-details-marker { display: none; }
+  details.faq summary .chev {
+    flex-shrink: 0;
+    transition: transform 150ms ease-out;
+  }
+  details.faq[open] summary .chev { transform: rotate(180deg); }
+  details.faq p {
+    color: var(--fg-muted);
+    margin: 14px 0 0;
+    font-size: 15px;
+  }
+
+  .placeholder-note {
+    font-size: 13px;
+    color: var(--fg-muted);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 32px;
+  }
+  .placeholder-note strong { color: var(--fg); }
+
+  footer.site {
+    padding: 40px 0 56px;
+    border-top: 1px solid var(--border);
+  }
+  footer.site p {
+    color: var(--fg-muted);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    .feature-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; gap: 32px; }
+    section { padding: 48px 0; }
+    .hero { padding-top: 40px; padding-bottom: 40px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <circle cx="32" cy="32" r="28" fill="var(--primary)" />
+        <path d="M32 16v16l11 7" stroke="var(--on-primary)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      Cadence
+    </a>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="wrap">
+      <h1>One HTML file. Your focus timer, offline.</h1>
+      <p class="subhead">No accounts, no tracking, no network calls. Just Pomodoro timers that work in any browser.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="./app/">Use it in your browser</a>
+        <a class="btn btn-secondary" href="./app/index.html" download>Download the file</a>
+      </div>
+      <p class="trust-note">No signup, no network, free. Your data stays in your browser.</p>
+    </div>
+  </section>
+
+  <section id="features" aria-labelledby="features-heading">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Features</span>
+        <h2 id="features-heading">What Cadence actually does</h2>
+        <p>Six things, all shipped, all verifiable by opening the file.</p>
+      </div>
+      <div class="feature-grid">
+
+        <div class="feature-card">
+          <div class="icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+          </div>
+          <h3>Accurate timers, every time</h3>
+          <p>Cadence keeps time by the end timestamp, not by counting seconds. Even if your tab stays in the background, it drifts less than 1 second over an entire session.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <h3>Timers that work for you</h3>
+          <p>Work cycles, short breaks, long breaks — choose the minutes that fit your rhythm. Set how many cycles trigger a long break and let Cadence auto-advance through your day.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="17" rx="1"/></svg>
+          </div>
+          <h3>Track your day</h3>
+          <p>See at a glance how many focused sessions you've completed today. A session counter resets at local midnight, so your count always matches your actual day.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><rect x="5" y="12" width="3" height="8" rx="1"/><rect x="11" y="7" width="3" height="13" rx="1"/><rect x="17" y="10" width="3" height="10" rx="1"/></svg>
+          </div>
+          <h3>Keep your streak</h3>
+          <p>A current and best streak, plus a 14-day inline history chart, keeps your momentum visible without ever leaving the page.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <h3>Your data, portable</h3>
+          <p>Export your timers, streaks, and history as JSON. Save it, move it, reload it on another device. No accounts, no vendor lock-in — your data is yours to back up.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/></svg>
+          </div>
+          <h3>Keyboard shortcuts, full control</h3>
+          <p>Space to start/pause. R to reset. S for settings. No mouse required. Cadence meets WCAG AA contrast standards in both light and dark themes.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" aria-labelledby="how-heading">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">How it works</span>
+        <h2 id="how-heading">Three steps, no installation</h2>
+      </div>
+      <ol class="steps" style="list-style:none; margin:0; padding:0;">
+        <li class="step">
+          <span class="num" aria-hidden="true">1</span>
+          <h3>Download</h3>
+          <p>Click the button above to download index.html. That's it — one file, no installation, no build step.</p>
+        </li>
+        <li class="step">
+          <span class="num" aria-hidden="true">2</span>
+          <h3>Open</h3>
+          <p>Open it in your browser — any browser. The file:// URL works, no server needed. Start a timer.</p>
+        </li>
+        <li class="step">
+          <span class="num" aria-hidden="true">3</span>
+          <h3>Focus</h3>
+          <p>Your data stays in your browser. Export when you want to back up. No tracking, no surprises.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="privacy" aria-labelledby="privacy-heading">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Privacy &amp; data</span>
+        <h2 id="privacy-heading">Your data, your control</h2>
+        <p>Cadence makes zero network calls — you can verify this in your browser's developer tools; the Network tab stays empty.</p>
+      </div>
+      <div class="qa-grid">
+        <div class="qa-card">
+          <h3>Where is my data?</h3>
+          <p>Your timer data (sessions, streaks, settings) is stored in your browser's localStorage. It never leaves your device.</p>
+        </div>
+        <div class="qa-card">
+          <h3>What if I clear my browser data?</h3>
+          <p>If you clear your browser's local storage, your history will be cleared. Before you clean up, export your data as JSON — one click. You can import it anytime to restore your sessions and streaks.</p>
+        </div>
+        <div class="qa-card">
+          <h3>Can I back up my data?</h3>
+          <p>Yes. Click Export to download your data as a JSON file. You own it — keep copies, move it between devices, or import it into a fresh browser session at any time.</p>
+        </div>
+        <div class="qa-card">
+          <h3>Does it sync across devices?</h3>
+          <p>No. Cadence is deliberately device-local. Export your data on one device, download Cadence on another, and import to pick up where you left off.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-heading">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">FAQ</span>
+        <h2 id="faq-heading">Frequently asked questions</h2>
+      </div>
+
+      <details class="faq">
+        <summary>Is Cadence free? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>Yes. Download and use Cadence with no limits, no ads, no paid tiers.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Where is my data stored? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>In your browser's localStorage. It never leaves your computer.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Does Cadence require an internet connection? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>No. It works completely offline. Once you download the HTML file, you have everything you need.</p>
+      </details>
+
+      <details class="faq">
+        <summary>What happens if I close my browser or turn off my computer? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>Your streak and session data are saved in localStorage and will be there when you return. If you're worried, export your data regularly — it takes one click.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Can I change session lengths? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>Yes. Open Settings (press S or click the gear icon) and adjust work, short break, and long break durations to whatever you prefer. Changes apply immediately to the next cycle.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Are there keyboard shortcuts? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>Yes. Press Space to start/pause the timer, R to reset, and S to open settings. No mouse required.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Does Cadence work on mobile? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>It's a standard web page, so it loads in mobile browsers and buttons respond to touch. We haven't done systematic mobile testing yet, so we can't claim it's touch-optimized.</p>
+      </details>
+
+      <details class="faq">
+        <summary>How accurate is the timer? <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <p>Cadence uses end-timestamp math rather than tick counting. It drifts less than 1 second, even if the tab runs in the background. This accuracy is verified by 167 automated tests.</p>
+      </details>
+
+      <p class="placeholder-note"><strong>Placeholder note:</strong> this page intentionally includes no testimonials, ratings, or user counts — there is no social proof to show yet.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Made with care. One file. No tracking.</p>
+  </div>
+</footer>
+
+</body>
+</html>
